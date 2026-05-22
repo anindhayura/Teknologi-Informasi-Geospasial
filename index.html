@@ -1,53 +1,278 @@
-<html>
+<!doctype html>
+<html lang="en">
     <head>
-        <title>geospatial mashup</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-        <style>#map {width:100%; height:600px}</style>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="./resources/ol.css">
+        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
+        <link href="resources/photon-geocoder-autocomplete.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
+        <link rel="stylesheet" href="./resources/qgis2web.css">
+        <style>
+        html, body {
+            background-color: #ffffff;
+        }
+        .ol-control > * {
+            background-color: #f8f8f8!important;
+            color: #444444!important;
+            border-radius: 0px;
+        }
+        .ol-attribution a, .gcd-gl-input::placeholder, .search-layer-input-search::placeholder {
+            color: #444444!important;
+        }
+        .search-layer-input-search {
+            background-color: #f8f8f8!important;
+        }
+        .ol-control > *:focus, .ol-control >*:hover {
+            background-color: rgba(248, 248, 248, 0.7)!important;
+        } 
+        .ol-control {
+            background-color: rgba(255,255,255,.4) !important;
+            padding: 2px !important;
+        } 
+                /* HEADER JUDUL */
+        #header {
+            width: 100%;
+            height: 60px;
+            background-color: #0057b8;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+            position: relative;
+        }
+        </style>
+
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
     </head>
     <body>
-        <div id="map"></div>
-        <script>
-            var map = L.map('map').setView([-5.159847, 119.436375], 13); 
+                        <!-- JUDUL -->
+        <div id="header">
+            WebGIS Aksesbilitas Pendidikan dan Visualisasi Area Zonasi PPDB Berdasarkan Radius Sekolah di Kabupaten Makassar
+        </div>
+        <div id="map">
+            <div id="popup" class="ol-popup">
+                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                <div id="popup-content"></div>
+            </div>
+        </div>
+        <script src="resources/qgis2web_expressions.js"></script>
+        <script src="./resources/functions.js"></script>
+        <script src="./resources/ol.js"></script>
+        <script src="./resources/ol-layerswitcher.js"></script>
+        <script src="resources/photon-geocoder-autocomplete.min.js"></script>
+        <script src="layers/BATASADMINISTRASI_1.js"></script><script src="layers/PEMUKIMAN_2.js"></script><script src="layers/JALAN_3.js"></script><script src="layers/PENDIDIKAN_4.js"></script>
+        <script src="styles/BATASADMINISTRASI_1_style.js"></script><script src="styles/PEMUKIMAN_2_style.js"></script><script src="styles/JALAN_3_style.js"></script><script src="styles/PENDIDIKAN_4_style.js"></script>
+        <script src="./layers/layers.js" type="text/javascript"></script> 
+        <script src="./resources/Autolinker.min.js"></script>
+        <script src="./resources/qgis2web.js"></script>        
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof map === "undefined") {
+        console.error("Objek 'map' tidak ditemukan. Pastikan qgis2web.js dimuat dengan benar.");
+        return;
+    }
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
-            }).addTo(map);
+    /* ================ DATA ================ */
+    const geojsonData = {
+        type: "FeatureCollection",
+        features: [
+            {
 
-           // CUSTOM ICON
-            var bookIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/29/29302.png',
+                type: "Feature",
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [[
+                        [119.46067025852359, -5.166954100000011],
+                        [119.46061707992321, -5.165268803381613],
+                        [119.46045775399372, -5.163590153404469],
+                        [119.46019290952177, -5.161924775013605],
+                        [119.4598235917275, -5.1602792408283875],
+                        [119.45935125813949, -5.158660045201322],
+                        [119.45877777284267, -5.157073578584893],
+                        [119.45810539912145, -5.155526102307812],
+                        [119.4573367905278, -5.154023723860126],
+                        [119.45647498040864, -5.152572372784865],
+                        [119.4555233699348, -5.151177777271467],
+                        [119.45448571467806, -5.149845441543362],
+                        [119.4533661097897, -5.148580624129246],
+                        [119.45216897383868, -5.147388317103477],
+                        [119.45089903137368, -5.1462732263782245],
+                        [119.44956129427743, -5.1452397531246765],
+                        [119.44816104198712, -5.144291976397076],
+                        [119.44670380065881, -5.1434336370281555],
+                        [119.44519532135824, -5.1426681228597015],
+                        [119.44364155736409, -5.141998455366398],
+                        [119.442048640673, -5.141427277726217],
+                        [119.4404228577994, -5.140956844384153],
+                        [119.43877062496553, -5.140589012150723],
+                        [119.43709846277957, -5.140325232870531],
+                        [119.43541297050174, -5.140166547689665],
+                        [119.4337208, -5.140113582944695],
+                        [119.43202862949828, -5.140166547689665],
+                        [119.43034313722043, -5.140325232870531],
+                        [119.42867097503449, -5.140589012150723],
+                        [119.42701874220063, -5.140956844384153],
+                        [119.42539295932701, -5.141427277726217],
+                        [119.42380004263592, -5.141998455366398],
+                        [119.42224627864178, -5.1426681228597015],
+                        [119.42073779934123, -5.1434336370281555],
+                        [119.41928055801291, -5.144291976397076],
+                        [119.41788030572259, -5.1452397531246765],
+                        [119.41654256862635, -5.1462732263782245],
+                        [119.41527262616134, -5.147388317103477],
+                        [119.41407549021032, -5.148580624129246],
+                        [119.41295588532196, -5.149845441543362],
+                        [119.41191823006521, -5.151177777271467],
+                        [119.41096661959139, -5.152572372784865],
+                        [119.41010480947222, -5.154023723860126],
+                        [119.40933620087857, -5.155526102307812],
+                        [119.40866382715735, -5.157073578584893],
+                        [119.40809034186051, -5.158660045201322],
+                        [119.40761800827252, -5.1602792408283875],
+                        [119.40724869047824, -5.161924775013605],
+                        [119.4069838460063, -5.163590153404469],
+                        [119.40682452007681, -5.165268803381613],
+                        [119.40677134147643, -5.166954100000011],
+                        [119.40682452007681, -5.168639392135889],
+                        [119.4069838460063, -5.170318028736229],
+                        [119.40724869047824, -5.171983385066931],
+                        [119.40761800827252, -5.17362888885653],
+                        [119.40809034186051, -5.1752480462319035],
+                        [119.40866382715735, -5.1768344673437925],
+                        [119.40933620087857, -5.178381891581123],
+                        [119.41010480947222, -5.1798842122745405],
+                        [119.41096661959139, -5.181335500791866],
+                        [119.41191823006521, -5.182730029930218],
+                        [119.41295588532196, -5.184062296512924],
+                        [119.41407549021032, -5.185327043101786],
+                        [119.41527262616134, -5.186519278739369],
+                        [119.41654256862635, -5.187634298639368],
+                        [119.41788030572259, -5.18866770274753],
+                        [119.41928055801291, -5.189615413100098],
+                        [119.42073779934123, -5.190473689911057],
+                        [119.42224627864178, -5.191239146325269],
+                        [119.42380004263592, -5.191908761778833],
+                        [119.42539295932701, -5.192479893914474],
+                        [119.42701874220063, -5.19295028900486],
+                        [119.42867097503449, -5.193318090842682],
+                        [119.43034313722043, -5.193581848062713],
+                        [119.43202862949828, -5.193740519866764],
+                        [119.4337208, -5.193793480129238],
+                        [119.43541297050174, -5.193740519866764],
+                        [119.43709846277957, -5.193581848062713],
+                        [119.43877062496553, -5.193318090842682],
+                        [119.4404228577994, -5.19295028900486],
+                        [119.442048640673, -5.192479893914474],
+                        [119.44364155736409, -5.191908761778833],
+                        [119.44519532135824, -5.191239146325269],
+                        [119.44670380065881, -5.190473689911057],
+                        [119.44816104198712, -5.189615413100098],
+                        [119.44956129427743, -5.18866770274753],
+                        [119.45089903137368, -5.187634298639368],
+                        [119.45216897383868, -5.186519278739369],
+                        [119.4533661097897, -5.185327043101786],
+                        [119.45448571467806, -5.184062296512924],
+                        [119.4555233699348, -5.182730029930218],
+                        [119.45647498040864, -5.181335500791866],
+                        [119.4573367905278, -5.1798842122745405],
+                        [119.45810539912145, -5.178381891581123],
+                        [119.45877777284267, -5.1768344673437925],
+                        [119.45935125813949, -5.1752480462319035],
+                        [119.4598235917275, -5.17362888885653],
+                        [119.46019290952177, -5.171983385066931],
+                        [119.46045775399372, -5.170318028736229],
+                        [119.46067025852359, -5.166954100000011]
+                ]]
+                }
+            },
+            {
+                type: "Feature",
+                geometry: {
+                    type: "LineString",
+                    coordinates: [
+                        [119.4342385, -5.1673861],
+                        [119.4345016, -5.1665898],
+                        [119.4348372, -5.165327],
+                        [119.4357781, -5.1616786],
+                        [119.4365147, -5.1575704],
+                        [119.438221, -5.1462108],
+                        [119.4389321, -5.1412533],
+                        [119.4399197, -5.1368466],
+                        [119.4345076, -5.1351941],
+                        [119.4299037, -5.1346782],
+                        [119.4283455, -5.1351171],
+                        [119.4269919, -5.1350544]
+                    ]
+                }
+            },
+            {
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: [119.4340579, -5.1673404]
+                }
+            }
+        ]
+    };
 
-            iconSize: [20, 20],
-            iconAnchor: [11, 6],
-            popupAnchor: [0, -20]
+    /* ================ STYLE ================ */
+    function styleGeoJSON(feature) {
+        const type = feature.getGeometry().getType();
+        if (type === "Polygon" || type === "MultiPolygon") {
+            return new ol.style.Style({
+                stroke: new ol.style.Stroke({ color: "#312E81", width: 2 }),
+                fill: new ol.style.Fill({ color: "rgba(255,0,0,0.2)" })
             });
+        }
+        if (type === "LineString") {
+            return new ol.style.Style({
+                stroke: new ol.style.Stroke({ color: "#312E81", width: 3 })
+            });
+        }
+        if (type === "Point") {
+            return new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 6,
+                    fill: new ol.style.Fill({ color: "blue" }),
+                    stroke: new ol.style.Stroke({ color: "white", width: 2 })
+                })
+            });
+        }
+    }
 
-        // MARKER DENGAN ICON CUSTOM
-            var marker = L.marker(
-            [-5.167456, 119.434198],
-                {icon: bookIcon}
-            ).addTo(map);
+    /* ================ LAYER ================ */
+    const geojsonLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+            features: new ol.format.GeoJSON().readFeatures(geojsonData, {
+                featureProjection: "EPSG:3857"
+            })
+        }),
+        style: styleGeoJSON
+    });
 
-            var circle = L.circle([-5.167456, 119.434198], {
-                color: '#82c8e5',
-                fillColor: '#82c8e5',
-                fillOpacity: 0.5,
-                radius: 1000
-            }).addTo(map);
-            
-            var polyline = L.polyline([ 
-                [-5.149226, 119.434121],
-                [-5.149491, 119.434816],
-                [-5.149590, 119.435152],
-                [-5.149270, 119.436957],
-                [-5.149344, 119.437734],
-                [-5.158187, 119.436578],
-                [-5.167497, 119.434227]], { 
-                color: '#000080', 
-            }).addTo(map);
-
-        </script>
-    </body>
+    map.addLayer(geojsonLayer);
+    
+    // Opsional: Zoom ke layer agar langsung kelihatan
+    const extent = geojsonLayer.getSource().getExtent();
+    map.getView().fit(extent, { padding: [50, 50, 50, 50] });
+});
+</script>
+</body>
 </html>
